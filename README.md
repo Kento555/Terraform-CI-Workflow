@@ -2,7 +2,7 @@
 Basic CI workflow
 
 
-Error found:
+Error found:   
 ![alt text](image.png)
    
 You're getting this error because terraform fmt -check found formatting issues in your Terraform files (specifically, main.tf).
