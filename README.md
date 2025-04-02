@@ -1,7 +1,27 @@
 # Terraform-CI-Workflow
 Basic CI workflow
 
+Github branch protection rule:   
+![alt text](image-3.png)   
+![![alt text](image-2.png)](image-1.png)   
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Debug:   
 Error found:   
 ![alt text](image.png)
    
