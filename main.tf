@@ -78,27 +78,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "s3_tf_lifecycle" {
 
 resource "aws_s3_bucket_logging" "s3_tf_logging" {
   bucket        = aws_s3_bucket.s3_tf.id
-  target_bucket = "your-logs-bucket-name" # Replace this
+  target_bucket = "your-logs-bucket-name" # Replace with actual log bucket
   target_prefix = "logs/"
-}
-
-# Cross-region replication
-resource "aws_s3_bucket_replication_configuration" "s3_tf_replication" {
-  depends_on = [aws_s3_bucket_versioning.s3_tf_versioning]
-  bucket     = aws_s3_bucket.s3_tf.id
-  role       = aws_iam_role.replication_role.arn
-
-  rule {
-    id     = "replication-rule"
-    status = "Enabled"
-
-    filter {}
-
-    destination {
-      bucket        = "arn:aws:s3:::your-replica-bucket-name" # Replace this
-      storage_class = "STANDARD"
-    }
-  }
 }
 
 resource "aws_iam_role" "replication_role" {
@@ -147,9 +128,33 @@ resource "aws_iam_role_policy" "replication_policy" {
   })
 }
 
-# Event Notification placeholder
+resource "aws_s3_bucket_replication_configuration" "s3_tf_replication" {
+  depends_on = [aws_s3_bucket_versioning.s3_tf_versioning]
+  bucket     = aws_s3_bucket.s3_tf.id
+  role       = aws_iam_role.replication_role.arn
+
+  rule {
+    id     = "replication-rule"
+    status = "Enabled"
+
+    filter {}
+
+    destination {
+      bucket        = "arn:aws:s3:::your-replica-bucket-name" # Replace
+      storage_class = "STANDARD"
+    }
+  }
+}
+
+resource "aws_kms_key" "sqs_key" {
+  description             = "KMS key for SQS encryption"
+  deletion_window_in_days = 7
+}
+
 resource "aws_sqs_queue" "s3_notification_queue" {
-  name = "${local.name_prefix}-s3-notify-queue"
+  name                              = "${local.name_prefix}-s3-notify-queue"
+  kms_master_key_id                 = aws_kms_key.sqs_key.arn
+  kms_data_key_reuse_period_seconds = 300
 }
 
 resource "aws_s3_bucket_notification" "s3_tf_notification" {
