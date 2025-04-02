@@ -149,6 +149,24 @@ resource "aws_s3_bucket_replication_configuration" "s3_tf_replication" {
 resource "aws_kms_key" "sqs_key" {
   description             = "KMS key for SQS encryption"
   deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowRootAccount"
+        Effect = "Allow"
+        Principal = {
+          AWS = data.aws_caller_identity.current.arn
+        }
+        Action = [
+          "kms:*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 resource "aws_sqs_queue" "s3_notification_queue" {
