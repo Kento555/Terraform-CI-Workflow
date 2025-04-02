@@ -6,21 +6,6 @@ Github branch protection rule:
 ![![alt text](image-2.png)](image-1.png)   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Debug:   
 Error found:   
 ![alt text](image.png)
@@ -34,10 +19,8 @@ Your Terraform file(s) have formatting issues. The CI pipeline is intentionally 
 🔥 How to fix it   
 On your local machine, run:
    
-
 terraform fmt     
 This will auto-format your .tf files correctly. Then, commit and push the changes:
-   
    
 git add .   
 git commit -m "Fix: Terraform format issues"   
