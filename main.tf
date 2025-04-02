@@ -64,23 +64,99 @@ resource "aws_s3_bucket_lifecycle_configuration" "s3_tf_lifecycle" {
     id     = "expire-after-1-year"
     status = "Enabled"
 
-    filter {} # Apply to all objects
+    filter {}
 
     expiration {
       days = 365
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
     }
   }
 }
 
 resource "aws_s3_bucket_logging" "s3_tf_logging" {
-  bucket = aws_s3_bucket.s3_tf.id
-
-  target_bucket = "your-logs-bucket-name" # Replace with actual log bucket name
+  bucket        = aws_s3_bucket.s3_tf.id
+  target_bucket = "your-logs-bucket-name" # Replace this
   target_prefix = "logs/"
 }
 
-# Optional Placeholder: Event Notifications (add SNS, Lambda, or SQS config here)
-# resource "aws_s3_bucket_notification" "s3_tf_notification" {
-#   bucket = aws_s3_bucket.s3_tf.id
-#   ...
-# }
+# Cross-region replication
+resource "aws_s3_bucket_replication_configuration" "s3_tf_replication" {
+  depends_on = [aws_s3_bucket_versioning.s3_tf_versioning]
+  bucket     = aws_s3_bucket.s3_tf.id
+  role       = aws_iam_role.replication_role.arn
+
+  rule {
+    id     = "replication-rule"
+    status = "Enabled"
+
+    filter {}
+
+    destination {
+      bucket        = "arn:aws:s3:::your-replica-bucket-name" # Replace this
+      storage_class = "STANDARD"
+    }
+  }
+}
+
+resource "aws_iam_role" "replication_role" {
+  name = "${local.name_prefix}-replication-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "s3.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "replication_policy" {
+  name = "s3-replication-policy"
+  role = aws_iam_role.replication_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetReplicationConfiguration",
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.s3_tf.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObjectVersion",
+          "s3:GetObjectVersionAcl",
+          "s3:GetObjectVersionForReplication",
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete",
+          "s3:ReplicateTags"
+        ]
+        Resource = "${aws_s3_bucket.s3_tf.arn}/*"
+      }
+    ]
+  })
+}
+
+# Event Notification placeholder
+resource "aws_sqs_queue" "s3_notification_queue" {
+  name = "${local.name_prefix}-s3-notify-queue"
+}
+
+resource "aws_s3_bucket_notification" "s3_tf_notification" {
+  bucket = aws_s3_bucket.s3_tf.id
+
+  queue {
+    queue_arn = aws_sqs_queue.s3_notification_queue.arn
+    events    = ["s3:ObjectCreated:*"]
+  }
+}
