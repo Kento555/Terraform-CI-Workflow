@@ -19,7 +19,9 @@ Your Terraform file(s) have formatting issues. The CI pipeline is intentionally 
 🔥 How to fix it   
 On your local machine, run:
    
+terraform fmt - check   
 terraform fmt     
+echo $?
 This will auto-format your .tf files correctly. Then, commit and push the changes:
    
 git add .   
